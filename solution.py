@@ -1,6 +1,48 @@
 assignments = []
 rows = 'ABCDEFGHI'
 cols = '123456789'
+rows_array = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I']
+
+def cross(A, B):
+    "Cross product of elements in A and elements in B."
+    return [s+t for s in A for t in B]
+
+boxes = cross(rows, cols)
+
+# Creates an array with arrays of the row keys
+# [['A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7', 'A8', 'A9'], ['B1', 'B2', ...], [..], ..]
+row_units = [cross(r, cols) for r in rows]
+
+# Creates an array with arrays of the column keys
+# [['A1', 'B1', 'C1', 'D1', 'E1', 'F1', 'G1', 'H1', 'I1'], ['A2', 'B2', ...], [..], ..]
+column_units = [cross(rows, c) for c in cols]
+
+# Creates an array with arrays of the square units
+# [['A1', 'A2', 'A3', 'B1', 'B2', 'B3', 'C1', 'C2', 'C3'], ['A4', 'A5', ...], [..], ..]
+square_units = [cross(rs, cs) for rs in ('ABC','DEF','GHI') for cs in ('123','456','789')]
+
+unitlist = row_units + column_units + square_units
+
+# Iterates through each key (i.e.: 'A1', 'A2', 'A3', ...) and then loops through all of the arrays in
+# unitlist and adds the array to the dictionary value IF the key is included.  Basically creates a
+# dictionary with each key as the key & then the values are the arrays that include that key.
+# Ex: {'A1': [['A1', ...], ['A1', ...], ['A1', ...], [...]], 'A2': [['A2', ...], ['A2', ...], [...]], etc.}
+units = dict((s, [u for u in unitlist if s in u]) for s in boxes)
+
+# This creates a dictionary.  It loops through each key (i.e. 'A1', 'A2', 'A3', etc.) and then sets the value
+# to the peers.  It does this by using the sum method to create one array of all of the units for that key.  It
+# then uses the set function to create a set (i.e. {} vs. []) of those values, and then subtracts out the key
+# from that set i.e. if it's on 'A1', the end set of values will not include 'A1'
+peers = dict((s, set(sum(units[s],[]))-set([s])) for s in boxes)
+
+# This creates an array.  It uses the zip method to create an array of tuples [('A', '1'), ('B', '2'), ('C', '3'),
+# ('D', '4), ...].  Then it uses a for loop to return an array of basically the tuples combined into one string
+# ['A1', 'B2', 'C3', 'D4', 'E5', 'F6', 'G7', 'H8', 'I9'] for diag_one
+diag_one = [a[0] + a[1] for a in zip(rows, cols)]
+
+# This does the same thing, except for it uses cols[::-1] for the second argument to zip.  This basically can be thought
+# of as cols[start:end:step] so since it is passing in nothing, nothing and then -1, it is just going backwards.
+diag_two = [a[0] + a[1] for a in zip(rows, cols[::-1])]
 
 def assign_value(values, box, value):
     """
@@ -26,12 +68,49 @@ def naked_twins(values):
         the values dictionary with the naked twins eliminated from peers.
     """
 
-    # Find all instances of naked twins
-    # Eliminate the naked twins as possibilities for their peers
+    # values.keys() creates a dictionary of keys of all of the boxes ['A1', 'A2', 'A3', ...]
+    # then we iterate through all of those boxes & check of the length of the value in that box is 2
+    # this will return an array of two_number_boxes
 
-def cross(A, B):
-    "Cross product of elements in A and elements in B."
-    return [s+t for s in A for t in B]
+    #two_number_boxes = [box for box in values.keys() if len(values[box]) == 2]
+    two_number_boxes = ['A1', 'B3', 'B5', 'A7']
+    # iterate through the two_number_boxes
+    for box in two_number_boxes:
+        # This gets the columns of the selected box from the two_number_boxes array.  For example, if the box is
+        # 'A1' then [int(box[1]) - 1] will return 0 (1 - 1).  That will then take the first element in the column_units
+        # array which in this case would be ['A1', 'B1', 'C1', 'D1', 'E1', 'F1', 'G1', 'H1', 'I1']
+        the_cols = column_units[int(box[1]) - 1]
+        for col_box in the_cols:
+            # Get the value of the column box and see if it's the same as the two digit number and ensure
+            # it's not the same box :)
+            if values[col_box] == values[box] and box != col_box:
+                # If it matches, then record the value to remove
+                to_remove = values[col_box]
+                # Then loop through the inner_boxes and remove the to_remove value from others in that column
+                for inner_box in the_cols:
+                    if len(values[inner_box]) > 1 and inner_box != col_box and inner_box != box:
+                        values[inner_box] = values[inner_box].replace(to_remove[0], '')
+                        values[inner_box] = values[inner_box].replace(to_remove[1], '')
+
+        # This takes the letter of the box in the two_number_boxes element and then finds the index of that letter in
+        # the rows_array.  For ex: if box[0] = 'A' then the letter_index would be zero.
+        letter_index = rows_array.index(box[0])
+
+        # This then returns an array of the row.  For ex, if the box is 'A1' then this would return
+        # ['A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7', 'A8', 'A9']
+        the_rows = row_units[letter_index]
+
+        # Same process as above for columns
+        for row_box in the_rows:
+            if values[row_box] == values[box] and box != row_box:
+                to_remove_row = values[row_box]
+                for inner_row_box in the_rows:
+                    if len(values[inner_row_box]) > 1 and inner_row_box != row_box and inner_row_box != box:
+                        values[inner_row_box] = values[inner_row_box].replace(to_remove_row[0], '')
+                        values[inner_row_box] = values[inner_row_box].replace(to_remove_row[1], '')
+
+    return values
+
 
 def grid_values(grid):
     """
@@ -43,7 +122,6 @@ def grid_values(grid):
             Keys: The boxes, e.g., 'A1'
             Values: The value in each box, e.g., '8'. If the box has no value, then the value will be '123456789'.
     """
-    boxes = cross(rows, cols)
     i = 0
     sudoku_dict = {}
     while i < 81:
@@ -81,34 +159,6 @@ def display(values):
     return
 
 def eliminate(values):
-    boxes = cross(rows, cols)
-
-    # Creates an array with arrays of the row keys
-    # [['A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7', 'A8', 'A9'], ['B1', 'B2', ...], [..], ..]
-    row_units = [cross(r, cols) for r in rows]
-
-    # Creates an array with arrays of the column keys
-    # [['A1', 'B1', 'C1', 'D1', 'E1', 'F1', 'G1', 'H1', 'I1'], ['A2', 'B2', ...], [..], ..]
-    column_units = [cross(rows, c) for c in cols]
-
-    # Creates an array with arrays of the square units
-    # [['A1', 'A2', 'A3', 'B1', 'B2', 'B3', 'C1', 'C2', 'C3'], ['A4', 'A5', ...], [..], ..]
-    square_units = [cross(rs, cs) for rs in ('ABC','DEF','GHI') for cs in ('123','456','789')]
-
-    unitlist = row_units + column_units + square_units
-
-    # Iterates through each key (i.e.: 'A1', 'A2', 'A3', ...) and then loops through all of the arrays in
-    # unitlist and adds the array to the dictionary value IF the key is included.  Basically creates a
-    # dictionary with each key as the key & then the values are the arrays that include that key.
-    # Ex: {'A1': [['A1', ...], ['A1', ...], ['A1', ...], [...]], 'A2': [['A2', ...], ['A2', ...], [...]], etc.}
-    units = dict((s, [u for u in unitlist if s in u]) for s in boxes)
-
-    # This creates a dictionary.  It loops through each key (i.e. 'A1', 'A2', 'A3', etc.) and then sets the value
-    # to the peers.  It does this by using the sum method to create one array of all of the units for that key.  It
-    # then uses the set function to create a set (i.e. {} vs. []) of those values, and then subtracts out the key
-    # from that set i.e. if it's on 'A1', the end set of values will not include 'A1'
-    peers = dict((s, set(sum(units[s],[]))-set([s])) for s in boxes)
-
     # Iterate through each box & check the length of the value.  If it's one,
     # keep it in the array.
     solved_boxes = [box for box in values.keys() if len(values[box]) == 1]
@@ -119,23 +169,20 @@ def eliminate(values):
         for peer in peers[box]:
             # Remove the digit from the possible answer for all of the peers
             values[peer] = values[peer].replace(digit, '')
+
+        # is it a diagonal box?
+        if box in diag_one:
+            for db in diag_one:
+                if db != box:
+                    values[db] = values[db].replace(digit, '')
+
+        if box in diag_two:
+            for db2 in diag_two:
+                if db2 != box:
+                    values[db2] = values[db2].replace(digit, '')
     return values
 
 def only_choice(values):
-    # Creates an array with arrays of the row keys
-    # [['A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7', 'A8', 'A9'], ['B1', 'B2', ...], [..], ..]
-    row_units = [cross(r, cols) for r in rows]
-
-    # Creates an array with arrays of the column keys
-    # [['A1', 'B1', 'C1', 'D1', 'E1', 'F1', 'G1', 'H1', 'I1'], ['A2', 'B2', ...], [..], ..]
-    column_units = [cross(rows, c) for c in cols]
-
-    # Creates an array with arrays of the square units
-    # [['A1', 'A2', 'A3', 'B1', 'B2', 'B3', 'C1', 'C2', 'C3'], ['A4', 'A5', ...], [..], ..]
-    square_units = [cross(rs, cs) for rs in ('ABC','DEF','GHI') for cs in ('123','456','789')]
-
-    unitlist = row_units + column_units + square_units
-
     # unit is an array ['A1', 'A3', 'A4', ...]
     for unit in unitlist:
         for digit in '123456789':
@@ -147,6 +194,18 @@ def only_choice(values):
             # values dictionary with that digit
             if len(digit_places) == 1:
                 values[digit_places[0]] = digit
+
+    # use the same methodology if box is a diagonal box
+    for digit_two in '123456789':
+        digiplaces = [box2 for box2 in diag_one if digit_two in values[box2]]
+        if len(digiplaces) == 1:
+            values[digiplaces[0]] = digit_two
+
+    for digit_three in '123456789':
+        digiplaces_two = [box3 for box3 in diag_two if digit_three in values[box3]]
+        if len(digiplaces_two) == 1:
+            values[digiplaces_two[0]] = digit_three
+
     return values
 
 def reduce_puzzle(values):
@@ -160,10 +219,13 @@ def reduce_puzzle(values):
 
         # Use the Only Choice Strategy
         only_choice(values)
+
         # Check how many boxes have a determined value, to compare
         solved_values_after = len([box for box in values.keys() if len(values[box]) == 1])
+
         # If no new values were added, stop the loop.
         stalled = solved_values_before == solved_values_after
+
         # Sanity check, return False if there is a box with zero available values:
         if len([box for box in values.keys() if len(values[box]) == 0]):
             return False
@@ -171,20 +233,23 @@ def reduce_puzzle(values):
 
 
 def search(values):
-
     "Using depth-first search and propagation, try all possible values."
-    boxes = cross(rows, cols)
 
     # First, reduce the puzzle using the previous function
     values = reduce_puzzle(values)
+
+    # Failed earlier...
     if values is False:
-        return False ## Failed earlier
+        return False
+
+    # Check if solved!
     if all(len(values[s]) == 1 for s in boxes):
-        return values ## Solved!
+        return values
+
     # Choose one of the unfilled squares with the fewest possibilities
     length, square = min((len(values[s]), s) for s in boxes if len(values[s]) > 1)
 
-    # Now use recurrence to solve each one of the resulting sudokus, and
+    # Now use recursion to solve each one of the resulting sudokus, and
     for value in values[square]:
         new_sudoku = values.copy()
         new_sudoku[square] = value
@@ -208,7 +273,6 @@ def solve(grid):
 
 if __name__ == '__main__':
     diag_sudoku_grid = '2.............62....1....7...6..8...3...9...7...6..4...4....8....52.............3'
-
     display(solve(diag_sudoku_grid))
 
     try:
